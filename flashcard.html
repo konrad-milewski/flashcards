@@ -1,0 +1,181 @@
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flashcards</title>
+</head>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        #container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #card {
+            border: 1px solid black;
+            padding: 20px;
+            margin: 20px;
+            text-align: center;
+        }
+        #front {
+            font-size: 24px;
+        }
+        #back {
+            font-size: 18px;
+            display: none;
+        }
+        #show-answer {
+            display: none;
+        }
+        #no-cards {
+            display: none;
+        }
+        hr {
+            border: none;
+            border-top: 1px solid lightgray;
+            margin: 40px 0;
+        }
+        h3 {
+            margin-top: 40px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 100%;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="card">
+            <div id="front"></div>
+            <div id="back"></div>
+        </div>
+        <button id="show-answer">Show Answer</button>
+        <button id="next-card">Next Card</button>
+        <p id="no-cards">No cards due for review today.</p>
+        <hr>
+        <h3>Add a card:</h3>
+        <label for="front-input">Front:</label><br>
+        <input type="text" id="front-input"><br>
+        <label for="back-input">Back:</label><br>
+        <input type="text" id="back-input"><br><br>
+        <button id="add-card">Add Card</button><br><br>
+        <hr>
+        <h3>Import/Export:</h3>
+        <textarea id="import-export" rows="10" cols="50"></textarea><br><br>
+        <button id="import">Import</button> <button id="export">Export</button><br><br>
+    </div>
+
+    <!-- The JavaScript code goes here -->
+</body>
+
+    <script>
+        let deck = [
+            {front: "cat", back: "kot", interval: 1, lastReviewed: null},
+            {front: "dog", back: "pies", interval: 1, lastReviewed: null},
+            {front: "bird", back: "ptak", interval: 1, lastReviewed: null}
+        ];
+        let currentCard = null;
+
+        function showNextCard() {
+            currentCard = getNextCard();
+            if (currentCard) {
+                document.querySelector("#card").style.display = "block";
+                document.querySelector("#no-cards").style.display = "none";
+                document.querySelector("#front").textContent = currentCard.front;
+                document.querySelector("#back").textContent = currentCard.back;
+                document.querySelector("#back").style.display = "none";
+                document.querySelector("#show-answer").style.display = "inline-block";
+            } else {
+                document.querySelector("#card").style.display = "none";
+                document.querySelector("#no-cards").style.display = "block";
+            }
+        }
+
+       function getNextCard() {
+    let dueCards = deck.filter(card => card.lastReviewed === null || Date.now() - card.lastReviewed > card.interval * 86400000);
+    if (dueCards.length > 0) {
+        return dueCards[0];
+    } else {
+        return null;
+    }
+}
+
+document.querySelector("#show-answer").addEventListener("click", () => {
+    document.querySelector("#back").style.display = "block";
+    document.querySelector("#show-answer").style.display = "none";
+});
+
+document.querySelector("#next-card").addEventListener("click", () => {
+    let correct = confirm("Did you answer correctly?");
+    if (correct) {
+        currentCard.interval *= 2;
+    } else {
+        currentCard.interval = 1;
+    }
+    currentCard.lastReviewed = Date.now();
+    saveProgress();
+    showNextCard();
+});
+
+document.querySelector("#add-card").addEventListener("click", () => {
+    let front = document.querySelector("#front-input").value;
+    let back = document.querySelector("#back-input").value;
+    if (front && back) {
+        deck.push({front: front, back: back, interval: 1, lastReviewed: null});
+        saveProgress();
+        document.querySelector("#front-input").value = "";
+        document.querySelector("#back-input").value = "";
+        alert("Card added!");
+    } else {
+        alert("Please enter both the front and back of the card.");
+    }
+});
+
+document.querySelector("#import").addEventListener("click", () => {
+    let data = document.querySelector("#import-export").value;
+    if (data) {
+        deck = JSON.parse(data);
+        saveProgress();
+        showNextCard();
+        alert("Cards imported!");
+    } else {
+        alert("Please paste the data into the text area.");
+    }
+});
+
+document.querySelector("#export").addEventListener("click", () => {
+    document.querySelector("#import-export").value = JSON.stringify(deck);
+});
+
+function saveProgress() {
+    localStorage.setItem('deck', JSON.stringify(deck));
+}
+
+function loadProgress() {
+    let savedDeck = localStorage.getItem('deck');
+    if (savedDeck) {
+        deck = JSON.parse(savedDeck);
+        showNextCard();
+    }
+}
+
+loadProgress();
+</script>
+</html>
